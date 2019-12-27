@@ -1,2 +1,4 @@
 # robot-manipulator-sandbox
-This repository contains a simple project to control a robot manipulator on CoppeliaSim with ROS and DQ Robotics.
+This repository contains a simple project to control a robot manipulator on [CoppeliaSim](https://www.coppeliarobotics.com/) with ROS and [DQ Robotics](https://github.com/dqrobotics). The aim of the project is to explore some features of the DQ Robotics in python. 
+
+The [pseudoinverse controller](https://github.com/marcos-pereira/robot-manipulator-sandbox/blob/master/scripts/controller.py) was borrowed from [this DQ Robotics example](https://github.com/dqrobotics/python-examples/blob/master/vrep_interface/vrep_interface_move_kuka.py). The controller itself was not changed. To follow some standards, we also used the design usually used to implement the kinematic controllers of DQ Robotics. We give all the credit to the [DQ Robotics Project](https://github.com/dqrobotics) team. 
