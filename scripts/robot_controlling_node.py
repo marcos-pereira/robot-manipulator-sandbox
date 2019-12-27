@@ -34,9 +34,6 @@ def control():
 	## Defining controller
 	pseudoinverse_controller = PseudoinverseController(robot, gain)
 
-	## Define error as something big
-	task_error = 1
-
 	## Defining communication interface
 	interface = Interface(robot.get_dim_configuration_space())
 
