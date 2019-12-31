@@ -21,9 +21,9 @@ def control():
 	## Desired pose
 	translation = DQ([0.0, 0.1, 0.1, 0.1])
 	rotation = DQ([1.0, 0.0, 0.0, 0.0])
-	# xd = rotation + E_ * 0.5 * translation * rotation
+	xd = rotation + E_ * 0.5 * translation * rotation
 	# xd = robot.fkm((0,math.pi,0,math.pi,0,math.pi/2,0))
-	xd = robot.fkm((0.0, -math.pi/6, 0.0, math.pi/2.0, math.pi/6, 0.0, 0.0))
+	# xd = robot.fkm((0.0, -math.pi/6, 0.0, math.pi/2.0, math.pi/6, 0.0, 0.0))
 
 	## Defining initial target joints
 	theta_init = np.array([0.0, -math.pi/3.7, 0.0, math.pi/2.0, math.pi/3.7, 0.0, 0.0])
@@ -66,13 +66,13 @@ def control():
 			## Set robot init config
 			interface.send_joint_position(theta_init)
 
-			## Init pose
-			# x_init = interface.get_joint_positions()
-
 			if set_init_config_counter > init_config_iterations:
 
 				## Reset counter
 				set_init_config_counter = 0
+
+				## Init pose
+				x_init = robot.fkm(interface.get_joint_positions())
 
 				## Set next state
 				robot_state = k_run_control
@@ -87,7 +87,7 @@ def control():
 			joint_positions = interface.get_joint_positions()
 
 			## Desired pose to be set
-			x_set = xd
+			x_set = xd*x_init
 
 			## Compute control signal
 			## The control signal is the robot joint velocities
@@ -105,7 +105,7 @@ def control():
 			print("task_error ", np.linalg.norm(task_error))
 
 			## Verify if desired error was reached
-			if np.linalg.norm(task_error) < 0.01:
+			if np.linalg.norm(task_error) < 0.001:
 				robot_state = k_end_state
 
 		if robot_state == k_end_state:
