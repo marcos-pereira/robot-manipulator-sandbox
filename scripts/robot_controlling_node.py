@@ -25,15 +25,26 @@ def control():
 	# xd = robot.fkm((0,math.pi,0,math.pi,0,math.pi/2,0))
 	# xd = robot.fkm((0.0, -math.pi/6, 0.0, math.pi/2.0, math.pi/6, 0.0, 0.0))
 
-	## Create trajectory
+	## Create linear trajectory
 	x_trajectory = np.arange(0, 0.11, 0.01)
 	y_trajectory = np.arange(0, 0.11, 0.01)
 	z_trajectory = np.arange(0, 0.11, 0.01)
 
+	## Create circular trajectory
+	radius = 0.1
+	x_trajectory = np.arange(0, 2*math.pi, 0.01)
+	y_trajectory = np.arange(0, 2*math.pi, 0.01)
+	z_trajectory = np.zeros(len(x_trajectory))
+
 	## Create pose trajectory
 	translation_trajectory = []
 	for ii in range(len(x_trajectory)):
+		## Linear trajectory
 		translation = DQ([0.0, x_trajectory[ii], y_trajectory[ii], z_trajectory[ii]])
+
+		## Circular trajectory
+		translation = DQ([0.0, radius*math.sin(x_trajectory[ii]), radius*math.cos(y_trajectory[ii]), z_trajectory[ii]])
+
 		rotation = DQ([1.0, 0.0, 0.0, 0.0])
 		xd_trajectory = rotation + E_ * 0.5 * translation * rotation
 		translation_trajectory.append(xd_trajectory)
@@ -151,7 +162,7 @@ def control():
 			print("task_error ", np.linalg.norm(task_error))
 
 			## Verify if desired error was reached
-			if np.linalg.norm(task_error) < 0.001:
+			if np.linalg.norm(task_error) < 0.01:
 				trajectory_counter += 1
 
 			## If trajectory has finished
