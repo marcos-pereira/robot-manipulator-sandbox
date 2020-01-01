@@ -25,7 +25,6 @@ class PseudoinverseController:
     def __init__(self, robot, gain):
         self.robot_ = robot
         self.gain_ = gain
-        print("self.gain_ ", self.gain_)
 
     ## Compute control signal
     ## The control signal are joint velocities
