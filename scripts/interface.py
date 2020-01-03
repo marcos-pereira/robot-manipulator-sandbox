@@ -11,9 +11,6 @@ class Interface:
     ## Robot joint state ROS message
     joint_state_msg_ = JointState()
 
-    ## Joint command publisher
-    publisher_joint_command_ = rospy.Publisher('/robot_joint_command', JointState, queue_size=1)
-
     ## Interface constructor
     # @param self The object pointer
     # @param dof Number of degrees of freedom
