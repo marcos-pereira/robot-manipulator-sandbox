@@ -94,10 +94,16 @@ def control():
 			## Set robot init config
 			interface.send_joint_position(theta_init)
 
+			## Command gripper to close
+			interface.send_gripper_command(1)
+
 			if set_init_config_counter > init_config_iterations:
 
 				## Reset counter
 				set_init_config_counter = 0
+
+				## Command gripper to open
+				interface.send_gripper_command(0)
 
 				## Init pose
 				x_init = robot.fkm(interface.get_joint_positions())
