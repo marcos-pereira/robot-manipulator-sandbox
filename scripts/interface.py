@@ -2,6 +2,7 @@ import rospy
 import numpy as np
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
+from std_msgs.msg import Int32
 
 class Interface:
 
@@ -11,12 +12,16 @@ class Interface:
     ## Robot joint state ROS message
     joint_state_msg_ = JointState()
 
+    ## Gripper command ROS message
+    gripper_command_msg_ = Int32()
+
     ## Interface constructor
     # @param self The object pointer
     # @param dof Number of degrees of freedom
     def __init__(self, dof):
         self.dof_ = dof
         self.publisher_joint_command_ = rospy.Publisher('/robot_joint_command', JointState, queue_size=1)
+        self.publisher_gripper_command_ = rospy.Publisher('/robot_gripper_command', Int32, queue_size=1)
         self.subscriber_joint_state_ = rospy.Subscriber('/robot_joint_state', JointState, self.joint_positions_callback)
 
     ## Send joint positions to robot
@@ -42,6 +47,13 @@ class Interface:
     def joint_positions_callback(self, data):
         for ii in range(len(data.position)):
             self.joint_states_[ii] = data.position[ii]
+
+    ## Send gripper command to open or close
+    # @param gripper_command is 0 to open the gripper and 1 to close the gripper
+    def send_gripper_command(self, gripper_command):
+        self.gripper_command_msg_.data = gripper_command
+        self.publisher_gripper_command_.publish(self.gripper_command_msg_)
+
 
 
 
