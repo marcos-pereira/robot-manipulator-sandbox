@@ -9,16 +9,32 @@ import time
 pinv = DQ_LinearAlgebra.pinv
 import rospy
 from controller import PseudoinverseController
+from dqrobotics.robot_control import DQ_PseudoinverseController, ControlObjective
 from interface import Interface
+from SimObjectsInterface import SimObjectsInterface
+from KukaLBR14R820Robot import KukaLBR14R820Robot
 
 
 def control():
 	print("control()")
 
 	## Defining robot kinematic model
-	robot = KukaLw4Robot.kinematics()
+	robot = KukaLBR14R820Robot.kinematics()
 
-	## Desired pose
+	## Set robot base transformation
+	# Translation between robot frame and joint1 frame
+	base_p = -0.0073*i_ + 0.0001*j_ + 0.0739*k_
+	x_base = 1.0 + E_ * 0.5 * base_p
+	robot.set_base_frame(x_base)
+	robot.set_reference_frame(x_base)
+
+	## Set robot effector transformation
+	# Distance between LBR connection and gripper attachpoint
+	effector_p = 0.1190 * k_
+	x_effector = 1.0 + E_ * 0.5 * effector_p
+	# robot.set_effector(x_effector)
+
+	## Desired pose example
 	translation = DQ([0.0, 0.1, 0.1, 0.1])
 	rotation = DQ([1.0, 0.0, 0.0, 0.0])
 	xd = rotation + E_ * 0.5 * translation * rotation
@@ -53,13 +69,22 @@ def control():
 	theta_init = np.array([0.0, -math.pi/3.7, 0.0, math.pi/2.0, math.pi/3.7, 0.0, 0.0])
 
 	## Controller gain
-	gain = 1
+	gain = 1.0
 
 	## Defining controller
 	pseudoinverse_controller = PseudoinverseController(robot, gain)
+	# DQ robotics DQ_PseudoinverseController:
+	# pseudoinverse_controller = DQ_PseudoinverseController(robot)
+	# pseudoinverse_controller.set_control_objective(ControlObjective.Pose)
+	# pseudoinverse_controller.set_gain(1.0)
+	# pseudoinverse_controller.set_damping(0.001)
 
 	## Defining communication interface
 	interface = Interface(robot.get_dim_configuration_space())
+
+	## Interface to get pose of objects
+	robot_object = SimObjectsInterface('/LBR_iiwa_14_R820')
+	place_frame0 = SimObjectsInterface('/PlaceFrame0')
 
 	## Initialize node
 	rospy.init_node('robot_interface', anonymous=True)
@@ -109,7 +134,7 @@ def control():
 				x_init = robot.fkm(interface.get_joint_positions())
 
 				## Set next state
-				robot_state = k_run_trajectory_control
+				robot_state = k_run_pose_control
 
 			set_init_config_counter += 1
 
@@ -120,12 +145,22 @@ def control():
 			## Get joint positions from robot
 			joint_positions = interface.get_joint_positions()
 
+			## Effector initial pose
+			effector_p = 0.1190 * k_
+			effector_t = 1 + E_ * 0.5 * effector_p
+			effector_phi = -math.pi
+			effector_n = j_
+			effector_r = math.cos(effector_phi / 2.0) + effector_n * math.sin(effector_phi / 2.0)
+			effector_pose = effector_t*effector_r
+
 			## Desired pose to be set
-			x_set = xd*x_init
+			x_set = conj(robot_object.dq_object_pose())*place_frame0.dq_object_pose()*effector_pose
 
 			## Compute control signal
 			## The control signal is the robot joint velocities
 			u = pseudoinverse_controller.compute_control_signal(joint_positions, x_set)
+			# If using DQ_PseudoinverseController:
+			# u = pseudoinverse_controller.compute_setpoint_control_signal(joint_positions, vec8(x_set))
 
 			## We are actuating in the robot with joint position commands
 			## So we integrate the joint velocities
