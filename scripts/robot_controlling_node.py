@@ -13,17 +13,32 @@ from dqrobotics.robot_control import DQ_PseudoinverseController, ControlObjectiv
 from interface import Interface
 from SimObjectsInterface import SimObjectsInterface
 from KukaLBR14R820Robot import KukaLBR14R820Robot
+from KukaLBR4pRobot import KukaLBR4pRobot
 
 
 def control():
 	print("control()")
 
+	## Robot types
+	robot_LBR14R820 = 1
+	robot_LBR4p = 0
+
+	## Choose robot type
+	robot_type = robot_LBR14R820
+
 	## Defining robot kinematic model
-	robot = KukaLBR14R820Robot.kinematics()
+	if robot_type == robot_LBR14R820:
+		robot = KukaLBR14R820Robot.kinematics()
+	if robot_type == robot_LBR4p:
+		robot = KukaLBR4pRobot.kinematics()
 
 	## Set robot base transformation
 	# Translation between robot frame and joint1 frame
-	base_p = -0.0073*i_ + 0.0001*j_ + 0.0739*k_
+	if robot_type == robot_LBR14R820:
+		base_p = -0.0073 * i_ + 0.0001 * j_ + 0.0739 * k_
+	if robot_type == robot_LBR4p:
+		base_p = -0.00008 * i_ + 0.0001*j_ + 0.1010 * k_
+
 	x_base = 1.0 + E_ * 0.5 * base_p
 	robot.set_base_frame(x_base)
 	robot.set_reference_frame(x_base)
@@ -32,7 +47,7 @@ def control():
 	# Distance between LBR connection and gripper attachpoint
 	effector_p = 0.1190 * k_
 	x_effector = 1.0 + E_ * 0.5 * effector_p
-	# robot.set_effector(x_effector)
+	robot.set_effector(x_effector)
 
 	## Desired pose example
 	translation = DQ([0.0, 0.1, 0.1, 0.1])
@@ -68,29 +83,33 @@ def control():
 	## Defining initial target joints
 	theta_init = np.array([0.0, -math.pi/3.7, 0.0, math.pi/2.0, math.pi/3.7, 0.0, 0.0])
 
-	## Controller gain
+	## Control parameters
 	gain = 1.0
+	desired_error_norm = 0.001
 
 	## Defining controller
 	pseudoinverse_controller = PseudoinverseController(robot, gain)
 	# DQ robotics DQ_PseudoinverseController:
 	# pseudoinverse_controller = DQ_PseudoinverseController(robot)
 	# pseudoinverse_controller.set_control_objective(ControlObjective.Pose)
-	# pseudoinverse_controller.set_gain(1.0)
+	# pseudoinverse_controller.set_gain(gain)
 	# pseudoinverse_controller.set_damping(0.001)
 
 	## Defining communication interface
 	interface = Interface(robot.get_dim_configuration_space())
 
 	## Interface to get pose of objects
-	robot_object = SimObjectsInterface('/LBR_iiwa_14_R820')
+	if robot_type == robot_LBR14R820:
+		robot_object = SimObjectsInterface('/LBR_iiwa_14_R820')
+	if robot_type == robot_LBR4p:
+		robot_object = SimObjectsInterface('/LBR4p')
 	place_frame0 = SimObjectsInterface('/PlaceFrame0')
 
 	## Initialize node
 	rospy.init_node('robot_interface', anonymous=True)
 
 	## Control loop sampling time (seconds)
-	sampling_time = 0.05
+	sampling_time = 0.005
 
 	## ROS loop frequency rate
 	rate = rospy.Rate(1/sampling_time)
@@ -103,7 +122,7 @@ def control():
 
 	## Count initial configuration iterations
 	set_init_config_counter = 1
-	init_config_iterations = 100
+	init_config_iterations = 500
 
 	## Count trajectory steps
 	trajectory_counter = 0
@@ -146,10 +165,10 @@ def control():
 			joint_positions = interface.get_joint_positions()
 
 			## Effector initial pose
-			effector_p = 0.1190 * k_
+			effector_p = 0.0 * k_
 			effector_t = 1 + E_ * 0.5 * effector_p
-			effector_phi = -math.pi
-			effector_n = j_
+			effector_phi = math.pi
+			effector_n = -j_
 			effector_r = math.cos(effector_phi / 2.0) + effector_n * math.sin(effector_phi / 2.0)
 			effector_pose = effector_t*effector_r
 
@@ -174,7 +193,7 @@ def control():
 			print("task_error ", np.linalg.norm(task_error))
 
 			## Verify if desired error was reached
-			if np.linalg.norm(task_error) < 0.001:
+			if np.linalg.norm(task_error) < desired_error_norm:
 				robot_state = k_end_state
 
 		if robot_state == k_run_trajectory_control:
