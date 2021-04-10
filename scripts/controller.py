@@ -2,22 +2,10 @@ from dqrobotics import *
 import numpy as np
 from dqrobotics.utils import *
 pinv = DQ_LinearAlgebra.pinv
-from dqrobotics.robots import KukaLw4Robot
+from KukaLBR14R820Robot import KukaLBR14R820Robot
 
 
 class PseudoinverseController:
-
-    ## Robot kinematic model
-    robot_ = KukaLw4Robot.kinematics()
-
-    ## Controller gain
-    gain_ = 0
-
-    ## Last error signal
-    last_error_signal_ = DQ([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-
-    ## Last control signal
-    last_control_signal_ = vec8(DQ([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]))
 
     ## PseudoinverseController constructor
     # @param robot is the robot kinematics model
@@ -25,6 +13,8 @@ class PseudoinverseController:
     def __init__(self, robot, gain):
         self.robot_ = robot
         self.gain_ = gain
+        self.last_error_signal_ = DQ([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        self.last_control_signal_ = vec8(DQ([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]))
 
     ## Compute control signal
     ## The control signal are joint velocities
@@ -35,7 +25,7 @@ class PseudoinverseController:
         task_error = vec8(task_variable-task_reference)
         J = self.robot_.pose_jacobian(q)
 
-        u = -self.gain_ * np.matmul(pinv(J), task_error)
+        u = np.matmul(pinv(J), -self.gain_*task_error)
 
         self.last_error_signal_ = task_error
         self.last_control_signal_ = u
