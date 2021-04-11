@@ -24,7 +24,7 @@ def control():
 	robot_LBR4p = 0
 
 	## Choose robot type
-	robot_type = robot_LBR14R820
+	robot_type = robot_LBR4p
 
 	## Defining robot kinematic model
 	if robot_type == robot_LBR14R820:
