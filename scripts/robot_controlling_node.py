@@ -47,7 +47,8 @@ def control():
 	# Distance between LBR connection and gripper attachpoint
 	effector_p = 0.1190 * k_
 	x_effector = 1.0 + E_ * 0.5 * effector_p
-	robot.set_effector(x_effector)
+	if robot_type == robot_LBR4p:
+		robot.set_effector(x_effector)
 
 	## Desired pose example
 	translation = DQ([0.0, 0.1, 0.1, 0.1])
