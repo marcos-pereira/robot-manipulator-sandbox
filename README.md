@@ -26,7 +26,7 @@ cd <CoppeliaSimFolder>
 ./coppeliSim.sh
 ```
 
-3. After CoppeliaSim has opened, open the scene [kuka_lw4.ttt](https://github.com/marcos-pereira/robot-manipulator-sandbox/blob/master/simulation_scenes/kuka_lw4.ttt) from within CoppeliaSim.
+3. After CoppeliaSim has opened, open the scene [kuka_LBR4.ttt](https://github.com/marcos-pereira/robot-manipulator-sandbox/blob/master/simulation_scenes/kuka_LBR4.ttt) from within CoppeliaSim.
 
 4. Press the Play Button on the CoppeliaSim scene.
 
