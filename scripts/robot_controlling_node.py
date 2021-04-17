@@ -105,6 +105,7 @@ def control():
 	if robot_type == robot_LBR4p:
 		robot_object = SimObjectsInterface('/LBR4p')
 	place_frame0 = SimObjectsInterface('/PlaceFrame0')
+	place_frame2 = SimObjectsInterface('/PlaceFrame2')
 
 	## Initialize node
 	rospy.init_node('robot_interface', anonymous=True)
@@ -122,7 +123,12 @@ def control():
 	k_pre_grasp_pose = 4
 	k_grasp_pose = 5
 	k_grasp = 6
-	k_post_grasp = 7
+	k_post_grasp_pose = 7
+	k_move = 8
+	k_pre_place = 9
+	k_place = 10
+	k_post_place = 11
+	k_set_final_config = 12
 
 	## Count initial configuration iterations
 	set_init_config_counter = 0
@@ -130,7 +136,7 @@ def control():
 
 	## Count gripper iterations
 	gripper_command_counter = 0
-	gripper_command_iterations = 500
+	gripper_command_iterations = 1000
 
 	## Count trajectory steps
 	trajectory_counter = 0
@@ -250,9 +256,206 @@ def control():
 			interface.send_gripper_command(1)
 
 			if gripper_command_counter > gripper_command_iterations:
-				robot_state = k_end_state
+				gripper_command_counter = 0
+				robot_state = k_post_grasp_pose
 
 			gripper_command_counter += 1
+
+		if robot_state == k_post_grasp_pose:
+
+			print("k_post_grasp_pose")
+
+			## Get joint positions from robot
+			joint_positions = interface.get_joint_positions()
+
+			## Effector initial pose
+			effector_p = 0.01 * k_
+			effector_t = 1 + E_ * 0.5 * effector_p
+			effector_phi = math.pi
+			effector_n = -j_
+			effector_r = math.cos(effector_phi / 2.0) + effector_n * math.sin(effector_phi / 2.0)
+			effector_pose = effector_t*effector_r
+
+			## Desired pose to be set
+			x_set = conj(robot_object.dq_object_pose())*place_frame0.dq_object_pose()*effector_pose
+
+			## Compute control signal
+			## The control signal is the robot joint velocities
+			u = pseudoinverse_controller.compute_control_signal(joint_positions, x_set)
+			# If using DQ_PseudoinverseController:
+			# u = pseudoinverse_controller.compute_setpoint_control_signal(joint_positions, vec8(x_set))
+
+			## We are actuating in the robot with joint position commands
+			## So we integrate the joint velocities
+			theta_set = joint_positions + u * sampling_time
+
+			## Send joint positions to robot
+			interface.send_joint_position(theta_set)
+
+			## Get controller error
+			task_error = pseudoinverse_controller.get_last_error_signal()
+			print("task_error ", np.linalg.norm(task_error))
+
+			## Verify if desired error was reached
+			if np.linalg.norm(task_error) < desired_error_norm:
+				robot_state = k_move
+
+		if robot_state == k_move:
+			print("k_move")
+
+			## Get joint positions from robot
+			joint_positions = interface.get_joint_positions()
+
+			## Effector initial pose
+			effector_p = 0.0 * k_
+			effector_t = 1 + E_ * 0.5 * effector_p
+			effector_phi = math.pi
+			effector_n = -j_
+			effector_r = math.cos(effector_phi / 2.0) + effector_n * math.sin(
+				effector_phi / 2.0)
+			effector_pose = effector_t * effector_r
+
+			## Desired pose to be set
+			x_set = conj(
+				robot_object.dq_object_pose()) * place_frame2.dq_object_pose() * effector_pose
+
+			## Compute control signal
+			## The control signal is the robot joint velocities
+			u = pseudoinverse_controller.compute_control_signal(joint_positions,
+																x_set)
+			# If using DQ_PseudoinverseController:
+			# u = pseudoinverse_controller.compute_setpoint_control_signal(joint_positions, vec8(x_set))
+
+			## We are actuating in the robot with joint position commands
+			## So we integrate the joint velocities
+			theta_set = joint_positions + u * sampling_time
+
+			## Send joint positions to robot
+			interface.send_joint_position(theta_set)
+
+			## Get controller error
+			task_error = pseudoinverse_controller.get_last_error_signal()
+			print("task_error ", np.linalg.norm(task_error))
+
+			## Verify if desired error was reached
+			if np.linalg.norm(task_error) < desired_error_norm:
+				robot_state = k_pre_place
+
+		if robot_state == k_pre_place:
+
+			print("k_pre_place")
+
+			## Get joint positions from robot
+			joint_positions = interface.get_joint_positions()
+
+			## Effector initial pose
+			effector_p = -0.01 * k_
+			effector_t = 1 + E_ * 0.5 * effector_p
+			effector_phi = math.pi
+			effector_n = -j_
+			effector_r = math.cos(effector_phi / 2.0) + effector_n * math.sin(effector_phi / 2.0)
+			effector_pose = effector_t*effector_r
+
+			## Desired pose to be set
+			x_set = conj(robot_object.dq_object_pose())*place_frame2.dq_object_pose()*effector_pose
+
+			## Compute control signal
+			## The control signal is the robot joint velocities
+			u = pseudoinverse_controller.compute_control_signal(joint_positions, x_set)
+			# If using DQ_PseudoinverseController:
+			# u = pseudoinverse_controller.compute_setpoint_control_signal(joint_positions, vec8(x_set))
+
+			## We are actuating in the robot with joint position commands
+			## So we integrate the joint velocities
+			theta_set = joint_positions + u * sampling_time
+
+			## Send joint positions to robot
+			interface.send_joint_position(theta_set)
+
+			## Get controller error
+			task_error = pseudoinverse_controller.get_last_error_signal()
+			print("task_error ", np.linalg.norm(task_error))
+
+			## Verify if desired error was reached
+			if np.linalg.norm(task_error) < desired_error_norm:
+				robot_state = k_place
+
+		if robot_state == k_place:
+			print("k_place")
+
+			# Command gripper to close
+			interface.send_gripper_command(0)
+
+			if gripper_command_counter > gripper_command_iterations:
+				gripper_command_counter = 0
+				robot_state = k_post_place
+
+			gripper_command_counter += 1
+
+		if robot_state == k_post_place:
+
+			print("k_post_place")
+
+			## Get joint positions from robot
+			joint_positions = interface.get_joint_positions()
+
+			## Effector initial pose
+			effector_p = 0.2 * k_
+			effector_t = 1 + E_ * 0.5 * effector_p
+			effector_phi = math.pi
+			effector_n = -j_
+			effector_r = math.cos(effector_phi / 2.0) + effector_n * math.sin(effector_phi / 2.0)
+			effector_pose = effector_t*effector_r
+
+			## Desired pose to be set
+			x_set = conj(robot_object.dq_object_pose())*place_frame2.dq_object_pose()*effector_pose
+
+			## Compute control signal
+			## The control signal is the robot joint velocities
+			u = pseudoinverse_controller.compute_control_signal(joint_positions, x_set)
+			# If using DQ_PseudoinverseController:
+			# u = pseudoinverse_controller.compute_setpoint_control_signal(joint_positions, vec8(x_set))
+
+			## We are actuating in the robot with joint position commands
+			## So we integrate the joint velocities
+			theta_set = joint_positions + u * sampling_time
+
+			## Send joint positions to robot
+			interface.send_joint_position(theta_set)
+
+			## Get controller error
+			task_error = pseudoinverse_controller.get_last_error_signal()
+			print("task_error ", np.linalg.norm(task_error))
+
+			## Verify if desired error was reached
+			if np.linalg.norm(task_error) < desired_error_norm:
+				robot_state = k_set_final_config
+
+		if robot_state == k_set_final_config:
+
+			print("k_set_final_config")
+
+			## Set robot init config
+			interface.send_joint_position(theta_init)
+
+			## Command gripper to close
+			interface.send_gripper_command(1)
+
+			if set_init_config_counter > init_config_iterations:
+
+				## Reset counter
+				set_init_config_counter = 0
+
+				## Command gripper to open
+				interface.send_gripper_command(0)
+
+				## Init pose
+				x_init = robot.fkm(interface.get_joint_positions())
+
+				## Set next state
+				robot_state = k_end_state
+
+			set_init_config_counter += 1
 
 		if robot_state == k_run_trajectory_control:
 
@@ -285,7 +488,7 @@ def control():
 
 			## If trajectory has finished
 			if trajectory_counter == len(translation_trajectory):
-				robot_state = k_end_state
+				robot_state = k_set_final_config
 
 		if robot_state == k_end_state:
 			print("k_end_state")
