@@ -216,7 +216,7 @@ def control():
 			joint_positions = interface.get_joint_positions()
 
 			## Effector initial pose
-			effector_p = -0.01 * k_
+			effector_p = -0.005 * k_
 			effector_t = 1 + E_ * 0.5 * effector_p
 			effector_phi = math.pi
 			effector_n = -j_
@@ -398,7 +398,7 @@ def control():
 			joint_positions = interface.get_joint_positions()
 
 			## Effector initial pose
-			effector_p = 0.2 * k_
+			effector_p = 0.03 * k_
 			effector_t = 1 + E_ * 0.5 * effector_p
 			effector_phi = math.pi
 			effector_n = -j_
