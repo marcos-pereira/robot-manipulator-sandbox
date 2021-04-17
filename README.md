@@ -3,7 +3,7 @@ This repository contains a simple project to control a robot manipulator on [Cop
 
 The [pseudoinverse controller](https://github.com/marcos-pereira/robot-manipulator-sandbox/blob/master/scripts/controller.py) was borrowed from [this DQ Robotics example](https://github.com/dqrobotics/python-examples/blob/master/vrep_interface/vrep_interface_move_kuka.py). The controller itself was not changed. To follow some standards, we also used the design usually used to implement the kinematic controllers of DQ Robotics. We give all the credit to the [DQ Robotics Project](https://github.com/dqrobotics) team. 
 
-This project was tested with Ubuntu 18.04, ROS Melodic Morenia and python3.
+This project was tested with Ubuntu 20.04, ROS Noetic, and python3.
 
 # What do I need to install?
 1. Install [ROS](http://wiki.ros.org/melodic/Installation/Ubuntu).
@@ -35,6 +35,6 @@ cd <CoppeliaSimFolder>
 python3 robot_controlling_node.py
 ```
 
-6. The robot will move to the desired pose specified at [robot_controlling_node.py](https://github.com/marcos-pereira/robot-manipulator-sandbox/blob/master/scripts/robot_controlling_node.py).
+6. The robot will follow the state machine in the [robot_controlling_node.py](https://github.com/marcos-pereira/robot-manipulator-sandbox/blob/master/scripts/robot_controlling_node.py). It will pick an object and place it on another location.
 
 
