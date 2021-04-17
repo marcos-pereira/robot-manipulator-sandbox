@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
 from dqrobotics import *
-from dqrobotics.robots import KukaLw4Robot
 import numpy as np
 from dqrobotics.utils import DQ_LinearAlgebra
 import math
-import time
 pinv = DQ_LinearAlgebra.pinv
 import rospy
 from controller import PseudoinverseController
@@ -495,11 +493,11 @@ def control():
 
 		rate.sleep()
 
+
 def main():
 	control()
 
+
 if __name__ == '__main__':
 
-    main()
-
-    
+	main()
